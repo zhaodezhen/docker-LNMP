@@ -1,0 +1,77 @@
+# lnmp nginx mysql php
+nginx:
+  build: ./nginx
+  ports:
+    - "80-87:80-87"
+    - "10000-10010:10000-10010"
+  volumes:
+    # 项目目录映射
+    - ./app:/var/www/html
+    # nginx configs
+    - ./nginx/etc:/etc/nginx
+    # 错误日志
+    - ./nginx/logs:/var/log/nginx
+    # certificates
+    #- ./nginx/ca/server.crt/:/etc/nginx/server.crt:ro
+    #- ./nginx/ca/server.key/:/etc/nginx/server.key:ro
+  links:
+    - fpm:__DOCKER_FPM__
+
+# database
+mysql:
+  build: ./mysql
+  ports:
+    - "33066:3306"
+  volumes:
+    - ./mysql/datadir:/var/lib/mysql
+    # 日志
+    - ./mysql/logs:/var/log/mysql
+    # config
+    - ./mysql/conf.d:/etc/mysql/conf.d
+  environment:
+    - MYSQL_ROOT_PASSWORD=zdz123!@#
+
+# fpm php
+fpm:
+  build: ./php-fpm
+  ports:
+    - "9009:9000"
+  volumes:
+    # 项目目录映射
+    - ./app:/var/www/html
+    # config
+    - ./php-fpm/etc/php.ini-production:/usr/local/etc/php/php.ini:ro
+    - ./php-fpm/etc/php-fpm.d:/usr/local/etc/php-fpm.d:ro
+    - ./php-fpm/logs:/usr/local/var/log
+  #environment:
+    # Set your APP env variables here:
+    #- APP_KEY= 
+    #- DB_HOST=
+    #- DB_DATABASE=
+    #- DB_USERNAME=
+    #- DB_PASSWORD=
+  links:
+    - mysql:mysql
+    - redis:__DOCKER_REDIS__
+
+#redis
+redis:
+  image: redis
+  volumes:
+    - ./redis/datadir:/data
+    - ./redis/redis.conf:/usr/local/etc/redis/redis.conf
+  ports:
+    - "63799:6379"
+  entrypoint:
+    - redis-server
+    - /usr/local/etc/redis/redis.conf
+    - --appendonly yes
+
+#包管理
+#composer
+composer:
+  build: ./composer
+#npm cnpm
+#npm:
+#  build: ./composer
+
